@@ -3,6 +3,8 @@ import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import MemberView from './components/MemberView';
+import TrashView from './components/TrashView';
+import ArchiveView from './components/ArchiveView';
 import SalesforceSync from './components/SalesforceSync';
 import { useTaskContext } from './context/TaskContext';
 import { MEMBERS } from './data/members';
@@ -10,11 +12,20 @@ import { MEMBERS } from './data/members';
 export default function App() {
   const { exportData, importData } = useTaskContext();
   const [selectedMember, setSelectedMember] = useState(MEMBERS[0].id);
-  const [showDashboard, setShowDashboard] = useState(true);
+  // activeView: 'dashboard' | 'member' | 'trash' | 'archive'
+  const [activeView, setActiveView] = useState('dashboard');
 
   const handleSelectMember = (id) => {
     setSelectedMember(id);
-    setShowDashboard(false);
+    setActiveView('member');
+  };
+
+  const handleShowDashboard = () => {
+    setActiveView('dashboard');
+  };
+
+  const handleChangeView = (view) => {
+    setActiveView(view);
   };
 
   const handleExport = () => {
@@ -46,6 +57,21 @@ export default function App() {
     e.target.value = '';
   };
 
+  const renderMainContent = () => {
+    switch (activeView) {
+      case 'dashboard':
+        return <Dashboard onSelectMember={handleSelectMember} />;
+      case 'member':
+        return <MemberView memberId={selectedMember} />;
+      case 'trash':
+        return <TrashView />;
+      case 'archive':
+        return <ArchiveView />;
+      default:
+        return <Dashboard onSelectMember={handleSelectMember} />;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header onExport={handleExport} onImport={handleImport} />
@@ -53,15 +79,13 @@ export default function App() {
         <Sidebar
           selectedMember={selectedMember}
           onSelectMember={handleSelectMember}
-          showDashboard={showDashboard}
-          onShowDashboard={() => setShowDashboard(true)}
+          showDashboard={activeView === 'dashboard'}
+          onShowDashboard={handleShowDashboard}
+          activeView={activeView}
+          onChangeView={handleChangeView}
         />
         <main className="flex-1 min-h-[calc(100vh-57px)] overflow-y-auto">
-          {showDashboard ? (
-            <Dashboard onSelectMember={handleSelectMember} />
-          ) : (
-            <MemberView memberId={selectedMember} />
-          )}
+          {renderMainContent()}
         </main>
         <aside className="w-72 border-l border-gray-200 bg-white p-4 h-[calc(100vh-57px)] overflow-y-auto flex-shrink-0">
           <SalesforceSync />
@@ -72,8 +96,9 @@ export default function App() {
               <li>• 「タスク追加」でタスクを新規作成</li>
               <li>• 「週次保存」で進捗スナップショットを保存</li>
               <li>• 前週からの進捗増分が自動計算されます</li>
+              <li>• 完了タスクは📦アーカイブへ移動可能</li>
+              <li>• 削除したタスクは🗑ゴミ箱から復元可能</li>
               <li>• エクスポート/インポートでデータのバックアップ</li>
-              <li>• Salesforce連携で組織全体と同期可能</li>
             </ul>
           </div>
         </aside>

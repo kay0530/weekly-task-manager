@@ -4,7 +4,12 @@ import { useTaskContext } from '../context/TaskContext';
 
 function MemberAvatar({ member, size = 'sm' }) {
   const [imgError, setImgError] = useState(false);
-  const sizeClass = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-10 h-10 text-sm';
+  const sizeClasses = {
+    sm: 'w-8 h-8 text-xs',
+    md: 'w-10 h-10 text-sm',
+    lg: 'w-14 h-14 text-xl',
+  };
+  const sizeClass = sizeClasses[size] || sizeClasses.sm;
 
   if (member.sfPhotoUrl && !imgError) {
     return (
@@ -29,8 +34,15 @@ function MemberAvatar({ member, size = 'sm' }) {
 
 export { MemberAvatar };
 
-export default function Sidebar({ selectedMember, onSelectMember, showDashboard, onShowDashboard }) {
-  const { tasks } = useTaskContext();
+export default function Sidebar({
+  selectedMember,
+  onSelectMember,
+  showDashboard,
+  onShowDashboard,
+  activeView,
+  onChangeView,
+}) {
+  const { tasks, deletedTasks, archivedTasks } = useTaskContext();
 
   const getMemberTaskCount = (memberId) => tasks.filter(t => t.memberId === memberId).length;
 
@@ -43,10 +55,11 @@ export default function Sidebar({ selectedMember, onSelectMember, showDashboard,
   return (
     <aside className="w-64 bg-white border-r border-gray-200 h-[calc(100vh-57px)] overflow-y-auto flex-shrink-0">
       <nav className="p-3">
+        {/* Dashboard */}
         <button
           onClick={onShowDashboard}
           className={`w-full text-left px-3 py-2.5 rounded-lg mb-1 flex items-center gap-2 transition cursor-pointer ${
-            showDashboard ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+            activeView === 'dashboard' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'
           }`}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,6 +68,7 @@ export default function Sidebar({ selectedMember, onSelectMember, showDashboard,
           ダッシュボード
         </button>
 
+        {/* Members section */}
         <div className="mt-4 mb-2 px-3">
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">メンバー</h3>
         </div>
@@ -64,7 +78,7 @@ export default function Sidebar({ selectedMember, onSelectMember, showDashboard,
             key={member.id}
             onClick={() => onSelectMember(member.id)}
             className={`w-full text-left px-3 py-2.5 rounded-lg mb-0.5 flex items-center justify-between transition cursor-pointer ${
-              !showDashboard && selectedMember === member.id
+              activeView === 'member' && selectedMember === member.id
                 ? 'bg-blue-50 text-blue-700'
                 : 'text-gray-700 hover:bg-gray-50'
             }`}
@@ -79,6 +93,51 @@ export default function Sidebar({ selectedMember, onSelectMember, showDashboard,
             <div className="text-xs text-gray-500">{getMemberAvgProgress(member.id)}%</div>
           </button>
         ))}
+
+        {/* Divider */}
+        <div className="mt-4 mb-2 border-t border-gray-200 pt-3 px-3">
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">管理</h3>
+        </div>
+
+        {/* Archive */}
+        <button
+          onClick={() => onChangeView('archive')}
+          className={`w-full text-left px-3 py-2.5 rounded-lg mb-0.5 flex items-center justify-between transition cursor-pointer ${
+            activeView === 'archive' ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+            <span className="text-sm">アーカイブ</span>
+          </div>
+          {archivedTasks.length > 0 && (
+            <span className="text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">
+              {archivedTasks.length}
+            </span>
+          )}
+        </button>
+
+        {/* Trash */}
+        <button
+          onClick={() => onChangeView('trash')}
+          className={`w-full text-left px-3 py-2.5 rounded-lg mb-0.5 flex items-center justify-between transition cursor-pointer ${
+            activeView === 'trash' ? 'bg-red-50 text-red-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <span className="text-sm">ゴミ箱</span>
+          </div>
+          {deletedTasks.length > 0 && (
+            <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">
+              {deletedTasks.length}
+            </span>
+          )}
+        </button>
       </nav>
     </aside>
   );

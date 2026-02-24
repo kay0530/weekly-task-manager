@@ -7,6 +7,8 @@ const TaskContext = createContext(null);
 export function TaskProvider({ children }) {
   const [tasks, setTasks] = useLocalStorage('wtm-tasks', []);
   const [weekSnapshots, setWeekSnapshots] = useLocalStorage('wtm-snapshots', {});
+  const [deletedTasks, setDeletedTasks] = useLocalStorage('wtm-deleted', []);
+  const [archivedTasks, setArchivedTasks] = useLocalStorage('wtm-archived', []);
 
   const addTask = useCallback((task) => {
     const now = new Date().toISOString();
@@ -30,9 +32,61 @@ export function TaskProvider({ children }) {
     }));
   }, [setTasks]);
 
+  // Soft delete: move to trash
   const deleteTask = useCallback((id) => {
-    setTasks(prev => prev.filter(t => t.id !== id));
-  }, [setTasks]);
+    setTasks(prev => {
+      const task = prev.find(t => t.id === id);
+      if (task) {
+        setDeletedTasks(del => [...del, { ...task, deletedAt: new Date().toISOString() }]);
+      }
+      return prev.filter(t => t.id !== id);
+    });
+  }, [setTasks, setDeletedTasks]);
+
+  // Archive: move completed task to archive
+  const archiveTask = useCallback((id) => {
+    setTasks(prev => {
+      const task = prev.find(t => t.id === id);
+      if (task) {
+        setArchivedTasks(arch => [...arch, { ...task, archivedAt: new Date().toISOString() }]);
+      }
+      return prev.filter(t => t.id !== id);
+    });
+  }, [setTasks, setArchivedTasks]);
+
+  // Restore from trash
+  const restoreFromTrash = useCallback((id) => {
+    setDeletedTasks(prev => {
+      const task = prev.find(t => t.id === id);
+      if (task) {
+        const { deletedAt, ...restored } = task;
+        setTasks(ts => [...ts, { ...restored, updatedAt: new Date().toISOString() }]);
+      }
+      return prev.filter(t => t.id !== id);
+    });
+  }, [setDeletedTasks, setTasks]);
+
+  // Restore from archive
+  const restoreFromArchive = useCallback((id) => {
+    setArchivedTasks(prev => {
+      const task = prev.find(t => t.id === id);
+      if (task) {
+        const { archivedAt, ...restored } = task;
+        setTasks(ts => [...ts, { ...restored, updatedAt: new Date().toISOString() }]);
+      }
+      return prev.filter(t => t.id !== id);
+    });
+  }, [setArchivedTasks, setTasks]);
+
+  // Permanently delete from trash
+  const permanentlyDelete = useCallback((id) => {
+    setDeletedTasks(prev => prev.filter(t => t.id !== id));
+  }, [setDeletedTasks]);
+
+  // Empty all trash
+  const emptyTrash = useCallback(() => {
+    setDeletedTasks([]);
+  }, [setDeletedTasks]);
 
   const saveWeeklySnapshot = useCallback((weekKey) => {
     const key = weekKey || getWeekKey();
@@ -82,19 +136,34 @@ export function TaskProvider({ children }) {
   const importData = useCallback((data) => {
     if (data.tasks) setTasks(data.tasks);
     if (data.weekSnapshots) setWeekSnapshots(data.weekSnapshots);
-  }, [setTasks, setWeekSnapshots]);
+    if (data.deletedTasks) setDeletedTasks(data.deletedTasks);
+    if (data.archivedTasks) setArchivedTasks(data.archivedTasks);
+  }, [setTasks, setWeekSnapshots, setDeletedTasks, setArchivedTasks]);
 
   const exportData = useCallback(() => {
-    return { tasks, weekSnapshots, exportedAt: new Date().toISOString() };
-  }, [tasks, weekSnapshots]);
+    return {
+      tasks,
+      weekSnapshots,
+      deletedTasks,
+      archivedTasks,
+      exportedAt: new Date().toISOString(),
+    };
+  }, [tasks, weekSnapshots, deletedTasks, archivedTasks]);
 
   return (
     <TaskContext.Provider value={{
       tasks,
       weekSnapshots,
+      deletedTasks,
+      archivedTasks,
       addTask,
       updateTask,
       deleteTask,
+      archiveTask,
+      restoreFromTrash,
+      restoreFromArchive,
+      permanentlyDelete,
+      emptyTrash,
       saveWeeklySnapshot,
       getProgressDelta,
       getTasksByMember,

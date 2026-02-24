@@ -1,0 +1,32 @@
+// Generate a week key like "2026-W09"
+export function getWeekKey(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  const weekNum = 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+  return `${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+}
+
+export function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+export function createEmptyTask(memberId, category) {
+  const now = new Date().toISOString();
+  return {
+    id: generateId(),
+    memberId,
+    category,
+    title: '',
+    progress: 0,
+    weeklyHistory: {},
+    done: '',
+    notDone: '',
+    notDoneReason: '',
+    issues: '',
+    consultation: '',
+    createdAt: now,
+    updatedAt: now,
+  };
+}

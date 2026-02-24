@@ -1,5 +1,33 @@
+import { useState } from 'react';
 import { MEMBERS } from '../data/members';
 import { useTaskContext } from '../context/TaskContext';
+
+function MemberAvatar({ member, size = 'sm' }) {
+  const [imgError, setImgError] = useState(false);
+  const sizeClass = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-10 h-10 text-sm';
+
+  if (member.sfPhotoUrl && !imgError) {
+    return (
+      <img
+        src={member.sfPhotoUrl}
+        alt={member.nameJa}
+        onError={() => setImgError(true)}
+        className={`${sizeClass} rounded-full object-cover`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${sizeClass} rounded-full flex items-center justify-center text-white font-bold`}
+      style={{ backgroundColor: member.color }}
+    >
+      {member.nameJa.charAt(0)}
+    </div>
+  );
+}
+
+export { MemberAvatar };
 
 export default function Sidebar({ selectedMember, onSelectMember, showDashboard, onShowDashboard }) {
   const { tasks } = useTaskContext();
@@ -42,12 +70,7 @@ export default function Sidebar({ selectedMember, onSelectMember, showDashboard,
             }`}
           >
             <div className="flex items-center gap-2">
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                style={{ backgroundColor: member.color }}
-              >
-                {member.nameJa.charAt(0)}
-              </div>
+              <MemberAvatar member={member} size="sm" />
               <div>
                 <div className="text-sm font-medium">{member.nameJa}</div>
                 <div className="text-xs text-gray-400">{getMemberTaskCount(member.id)}件</div>

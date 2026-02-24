@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { MEMBERS, CATEGORIES } from '../data/members';
+import { MEMBERS, CATEGORIES, TASK_TYPES } from '../data/members';
 import { useTaskContext } from '../context/TaskContext';
+import { MemberAvatar } from './Sidebar';
 import TaskCard from './TaskCard';
 import TaskForm from './TaskForm';
 
@@ -9,17 +10,40 @@ export default function MemberView({ memberId }) {
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [filterCategory, setFilterCategory] = useState('all');
+  const [filterType, setFilterType] = useState('all');
+  const [sortBy, setSortBy] = useState('default');
 
   const member = MEMBERS.find(m => m.id === memberId);
   const memberTasks = getTasksByMember(memberId);
 
-  const filteredTasks = filterCategory === 'all'
-    ? memberTasks
-    : memberTasks.filter(t => t.category === filterCategory);
+  // Apply filters
+  let filteredTasks = memberTasks;
+  if (filterCategory !== 'all') {
+    filteredTasks = filteredTasks.filter(t => t.category === filterCategory);
+  }
+  if (filterType !== 'all') {
+    filteredTasks = filteredTasks.filter(t => t.taskType === filterType);
+  }
+
+  // Apply sorting
+  if (sortBy === 'priority') {
+    filteredTasks = [...filteredTasks].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+  } else if (sortBy === 'dueDate') {
+    filteredTasks = [...filteredTasks].sort((a, b) => {
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(a.dueDate) - new Date(b.dueDate);
+    });
+  } else if (sortBy === 'progress') {
+    filteredTasks = [...filteredTasks].sort((a, b) => b.progress - a.progress);
+  }
 
   const avgProgress = memberTasks.length > 0
     ? Math.round(memberTasks.reduce((s, t) => s + t.progress, 0) / memberTasks.length)
     : 0;
+
+  const completedCount = memberTasks.filter(t => t.progress >= 100).length;
+  const hasIssuesCount = memberTasks.filter(t => t.issues).length;
 
   const handleEdit = (task) => {
     setEditingTask(task);
@@ -38,15 +62,15 @@ export default function MemberView({ memberId }) {
       {/* Member Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <div
-            className="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg"
-            style={{ backgroundColor: member.color }}
-          >
-            {member.nameJa.charAt(0)}
+          <div className="shadow-lg rounded-full">
+            <MemberAvatar member={member} size="lg" />
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-900">{member.nameJa}</h2>
-            <p className="text-sm text-gray-500">{member.nameEn} | {memberTasks.length}件のタスク | 平均進捗 {avgProgress}%</p>
+            <p className="text-sm text-gray-500">
+              {member.nameEn} | {memberTasks.length}件のタスク | 完了 {completedCount}件 | 平均進捗 {avgProgress}%
+              {hasIssuesCount > 0 && <span className="text-orange-500 ml-1">| 課題 {hasIssuesCount}件</span>}
+            </p>
           </div>
         </div>
         <button
@@ -60,32 +84,59 @@ export default function MemberView({ memberId }) {
         </button>
       </div>
 
-      {/* Category Filter */}
-      <div className="flex gap-2 mb-4 flex-wrap">
-        <button
-          onClick={() => setFilterCategory('all')}
-          className={`px-3 py-1 text-xs rounded-full transition cursor-pointer ${
-            filterCategory === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          すべて ({memberTasks.length})
-        </button>
-        {CATEGORIES.map(cat => {
-          const count = memberTasks.filter(t => t.category === cat.id).length;
-          if (count === 0) return null;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => setFilterCategory(cat.id)}
-              className={`px-3 py-1 text-xs rounded-full transition cursor-pointer ${
-                filterCategory === cat.id ? 'text-white' : 'text-gray-600 hover:opacity-80'
-              }`}
-              style={filterCategory === cat.id ? { backgroundColor: cat.color } : { backgroundColor: `${cat.color}20`, color: cat.color }}
-            >
-              {cat.label} ({count})
-            </button>
-          );
-        })}
+      {/* Filters Row */}
+      <div className="flex items-center gap-4 mb-4 flex-wrap">
+        {/* Category filter */}
+        <div className="flex gap-1.5 flex-wrap flex-1">
+          <button
+            onClick={() => setFilterCategory('all')}
+            className={`px-3 py-1 text-xs rounded-full transition cursor-pointer ${
+              filterCategory === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            すべて ({memberTasks.length})
+          </button>
+          {CATEGORIES.map(cat => {
+            const count = memberTasks.filter(t => t.category === cat.id).length;
+            if (count === 0) return null;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setFilterCategory(cat.id)}
+                className={`px-3 py-1 text-xs rounded-full transition cursor-pointer ${
+                  filterCategory === cat.id ? 'text-white' : 'text-gray-600 hover:opacity-80'
+                }`}
+                style={filterCategory === cat.id ? { backgroundColor: cat.color } : { backgroundColor: `${cat.color}20`, color: cat.color }}
+              >
+                {cat.label} ({count})
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Type filter + Sort */}
+        <div className="flex items-center gap-2">
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="px-2 py-1 text-xs border border-gray-300 rounded-lg"
+          >
+            <option value="all">全属性</option>
+            {TASK_TYPES.map(t => (
+              <option key={t.id} value={t.id}>{t.icon} {t.label}</option>
+            ))}
+          </select>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="px-2 py-1 text-xs border border-gray-300 rounded-lg"
+          >
+            <option value="default">並び替え</option>
+            <option value="priority">優先順位</option>
+            <option value="dueDate">期日</option>
+            <option value="progress">進捗</option>
+          </select>
+        </div>
       </div>
 
       {/* Tasks Grid */}

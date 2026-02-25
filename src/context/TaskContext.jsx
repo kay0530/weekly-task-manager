@@ -1,94 +1,106 @@
-import { createContext, useContext, useCallback } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { initAuth } from '../firebase/config';
+import {
+  subscribeToTasks,
+  subscribeToSnapshots,
+  addTaskToFirestore,
+  updateTaskInFirestore,
+  softDeleteTask,
+  archiveTaskInFirestore,
+  restoreTask,
+  permanentlyDeleteTask,
+  emptyTrashInFirestore,
+  saveSnapshotToFirestore,
+  batchUpdateTasks,
+  batchWriteTasks,
+} from '../firebase/taskService';
+import { migrateFromLocalStorage } from '../firebase/migrationService';
 import { generateId, getWeekKey } from '../data/initialData';
 
 const TaskContext = createContext(null);
 
 export function TaskProvider({ children }) {
-  const [tasks, setTasks] = useLocalStorage('wtm-tasks', []);
-  const [weekSnapshots, setWeekSnapshots] = useLocalStorage('wtm-snapshots', {});
-  const [deletedTasks, setDeletedTasks] = useLocalStorage('wtm-deleted', []);
-  const [archivedTasks, setArchivedTasks] = useLocalStorage('wtm-archived', []);
+  const [allTasks, setAllTasks] = useState([]);
+  const [weekSnapshots, setWeekSnapshots] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [connectionStatus, setConnectionStatus] = useState('connecting'); // 'online'|'offline'|'connecting'
 
-  const addTask = useCallback((task) => {
+  // Derived state
+  const tasks = useMemo(() => allTasks.filter(t => t.status === 'active'), [allTasks]);
+  const deletedTasks = useMemo(() => allTasks.filter(t => t.status === 'deleted'), [allTasks]);
+  const archivedTasks = useMemo(() => allTasks.filter(t => t.status === 'archived'), [allTasks]);
+
+  // Initialize Firebase auth, migrate localStorage data, and subscribe to Firestore
+  useEffect(() => {
+    let unsubTasks, unsubSnapshots;
+
+    async function init() {
+      await initAuth();
+      await migrateFromLocalStorage();
+
+      unsubTasks = subscribeToTasks((tasksFromFirestore, metadata) => {
+        setAllTasks(tasksFromFirestore);
+        setIsLoading(false);
+        setConnectionStatus(metadata.fromCache ? 'offline' : 'online');
+      });
+
+      unsubSnapshots = subscribeToSnapshots((snapshotsFromFirestore) => {
+        setWeekSnapshots(snapshotsFromFirestore);
+      });
+    }
+
+    init();
+    return () => {
+      unsubTasks?.();
+      unsubSnapshots?.();
+    };
+  }, []);
+
+  const addTask = useCallback(async (task) => {
     const now = new Date().toISOString();
     const newTask = {
       id: generateId(),
       ...task,
       progress: task.progress || 0,
       weeklyHistory: {},
+      status: 'active',
       createdAt: now,
       updatedAt: now,
     };
-    setTasks(prev => [...prev, newTask]);
+    await addTaskToFirestore(newTask);
     return newTask;
-  }, [setTasks]);
+  }, []);
 
-  const updateTask = useCallback((id, updates) => {
-    setTasks(prev => prev.map(t => {
-      if (t.id !== id) return t;
-      const updated = { ...t, ...updates, updatedAt: new Date().toISOString() };
-      return updated;
-    }));
-  }, [setTasks]);
+  const updateTask = useCallback(async (id, updates) => {
+    await updateTaskInFirestore(id, updates);
+  }, []);
 
-  // Soft delete: move to trash
-  const deleteTask = useCallback((id) => {
-    setTasks(prev => {
-      const task = prev.find(t => t.id === id);
-      if (task) {
-        setDeletedTasks(del => [...del, { ...task, deletedAt: new Date().toISOString() }]);
-      }
-      return prev.filter(t => t.id !== id);
-    });
-  }, [setTasks, setDeletedTasks]);
+  const deleteTask = useCallback(async (id) => {
+    await softDeleteTask(id);
+  }, []);
 
-  // Archive: move completed task to archive
-  const archiveTask = useCallback((id) => {
-    setTasks(prev => {
-      const task = prev.find(t => t.id === id);
-      if (task) {
-        setArchivedTasks(arch => [...arch, { ...task, archivedAt: new Date().toISOString() }]);
-      }
-      return prev.filter(t => t.id !== id);
-    });
-  }, [setTasks, setArchivedTasks]);
+  const archiveTask = useCallback(async (id) => {
+    await archiveTaskInFirestore(id);
+  }, []);
 
-  // Restore from trash
-  const restoreFromTrash = useCallback((id) => {
-    setDeletedTasks(prev => {
-      const task = prev.find(t => t.id === id);
-      if (task) {
-        const { deletedAt, ...restored } = task;
-        setTasks(ts => [...ts, { ...restored, updatedAt: new Date().toISOString() }]);
-      }
-      return prev.filter(t => t.id !== id);
-    });
-  }, [setDeletedTasks, setTasks]);
+  const restoreFromTrash = useCallback(async (id) => {
+    await restoreTask(id);
+  }, []);
 
-  // Restore from archive
-  const restoreFromArchive = useCallback((id) => {
-    setArchivedTasks(prev => {
-      const task = prev.find(t => t.id === id);
-      if (task) {
-        const { archivedAt, ...restored } = task;
-        setTasks(ts => [...ts, { ...restored, updatedAt: new Date().toISOString() }]);
-      }
-      return prev.filter(t => t.id !== id);
-    });
-  }, [setArchivedTasks, setTasks]);
+  const restoreFromArchive = useCallback(async (id) => {
+    await restoreTask(id);
+  }, []);
 
-  // Permanently delete from trash
-  const permanentlyDelete = useCallback((id) => {
-    setDeletedTasks(prev => prev.filter(t => t.id !== id));
-  }, [setDeletedTasks]);
+  const permanentlyDelete = useCallback(async (id) => {
+    await permanentlyDeleteTask(id);
+  }, []);
 
-  // Empty all trash
-  const emptyTrash = useCallback(() => {
-    setDeletedTasks([]);
-  }, [setDeletedTasks]);
+  const emptyTrash = useCallback(async () => {
+    const ids = deletedTasks.map(t => t.id);
+    await emptyTrashInFirestore(ids);
+  }, [deletedTasks]);
 
-  const saveWeeklySnapshot = useCallback((weekKey) => {
+  const saveWeeklySnapshot = useCallback(async (weekKey) => {
     const key = weekKey || getWeekKey();
     const snapshot = {};
     tasks.forEach(t => {
@@ -101,13 +113,15 @@ export function TaskProvider({ children }) {
         consultation: t.consultation,
       };
     });
-    setWeekSnapshots(prev => ({ ...prev, [key]: snapshot }));
-    // Also save to each task's history
-    setTasks(prev => prev.map(t => ({
-      ...t,
-      weeklyHistory: { ...t.weeklyHistory, [key]: { progress: t.progress } },
-    })));
-  }, [tasks, setTasks, setWeekSnapshots]);
+    await saveSnapshotToFirestore(key, snapshot);
+
+    // Also save to each task's weeklyHistory
+    const updates = tasks.map(t => ({
+      id: t.id,
+      data: { weeklyHistory: { ...t.weeklyHistory, [key]: { progress: t.progress } } },
+    }));
+    if (updates.length > 0) await batchUpdateTasks(updates);
+  }, [tasks]);
 
   const getProgressDelta = useCallback((task) => {
     const currentWeek = getWeekKey();
@@ -133,12 +147,50 @@ export function TaskProvider({ children }) {
     return tasks.filter(t => t.category === categoryId);
   }, [tasks]);
 
-  const importData = useCallback((data) => {
-    if (data.tasks) setTasks(data.tasks);
-    if (data.weekSnapshots) setWeekSnapshots(data.weekSnapshots);
-    if (data.deletedTasks) setDeletedTasks(data.deletedTasks);
-    if (data.archivedTasks) setArchivedTasks(data.archivedTasks);
-  }, [setTasks, setWeekSnapshots, setDeletedTasks, setArchivedTasks]);
+  const importData = useCallback(async (data) => {
+    const now = new Date().toISOString();
+    const allImportTasks = [];
+
+    if (data.tasks) {
+      allImportTasks.push(...data.tasks.map(t => ({
+        ...t,
+        status: 'active',
+        updatedAt: t.updatedAt || now,
+        createdAt: t.createdAt || now,
+      })));
+    }
+    if (data.deletedTasks) {
+      allImportTasks.push(...data.deletedTasks.map(t => ({
+        ...t,
+        status: 'deleted',
+        deletedAt: t.deletedAt || now,
+        updatedAt: t.updatedAt || now,
+        createdAt: t.createdAt || now,
+      })));
+    }
+    if (data.archivedTasks) {
+      allImportTasks.push(...data.archivedTasks.map(t => ({
+        ...t,
+        status: 'archived',
+        archivedAt: t.archivedAt || now,
+        updatedAt: t.updatedAt || now,
+        createdAt: t.createdAt || now,
+      })));
+    }
+
+    if (allImportTasks.length > 0) {
+      const BATCH_LIMIT = 500;
+      for (let i = 0; i < allImportTasks.length; i += BATCH_LIMIT) {
+        await batchWriteTasks(allImportTasks.slice(i, i + BATCH_LIMIT));
+      }
+    }
+    // Import snapshots
+    if (data.weekSnapshots) {
+      for (const [weekKey, snapData] of Object.entries(data.weekSnapshots)) {
+        await saveSnapshotToFirestore(weekKey, snapData, 'import');
+      }
+    }
+  }, []);
 
   const exportData = useCallback(() => {
     return {
@@ -170,6 +222,8 @@ export function TaskProvider({ children }) {
       getTasksByCategory,
       importData,
       exportData,
+      isLoading,
+      connectionStatus,
     }}>
       {children}
     </TaskContext.Provider>

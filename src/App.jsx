@@ -10,10 +10,21 @@ import { useTaskContext } from './context/TaskContext';
 import { MEMBERS } from './data/members';
 
 export default function App() {
-  const { exportData, importData } = useTaskContext();
+  const { exportData, importData, isLoading } = useTaskContext();
   const [selectedMember, setSelectedMember] = useState(MEMBERS[0].id);
   // activeView: 'dashboard' | 'member' | 'trash' | 'archive'
   const [activeView, setActiveView] = useState('dashboard');
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-500 text-sm">データを読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSelectMember = (id) => {
     setSelectedMember(id);

@@ -1,9 +1,8 @@
-import { getWeekKey } from '../data/initialData';
+import { getWeekDisplayLabel } from '../data/initialData';
 import { useTaskContext } from '../context/TaskContext';
 
 export default function Header({ onExport, onImport }) {
   const { saveWeeklySnapshot } = useTaskContext();
-  const weekKey = getWeekKey();
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">
@@ -16,7 +15,7 @@ export default function Header({ onExport, onImport }) {
           </div>
           <div>
             <h1 className="text-lg font-bold text-gray-900">Weekly Task Manager</h1>
-            <p className="text-xs text-gray-500">{weekKey}</p>
+            <p className="text-xs text-gray-500">{getWeekDisplayLabel()}</p>
           </div>
         </div>
 

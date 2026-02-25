@@ -8,6 +8,20 @@ export function getWeekKey(date = new Date()) {
   return `${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
 }
 
+// Format current week's Monday as "YY年M月D日週" (e.g. "26年2月23日週")
+export function getWeekDisplayLabel(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay();
+  const diff = d.getDate() - ((day === 0 ? 7 : day) - 1);
+  const monday = new Date(d);
+  monday.setDate(diff);
+  const yy = monday.getFullYear() % 100;
+  const m = monday.getMonth() + 1;
+  const dd = monday.getDate();
+  return `${yy}年${m}月${dd}日週`;
+}
+
 export function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }

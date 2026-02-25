@@ -1,6 +1,5 @@
 import { getWeekKey } from '../data/initialData';
 import { useTaskContext } from '../context/TaskContext';
-import ConnectionStatus from './ConnectionStatus';
 
 export default function Header({ onExport, onImport }) {
   const { saveWeeklySnapshot } = useTaskContext();
@@ -17,7 +16,7 @@ export default function Header({ onExport, onImport }) {
           </div>
           <div>
             <h1 className="text-lg font-bold text-gray-900">Weekly Task Manager</h1>
-            <p className="text-xs text-gray-500 flex items-center gap-2">{weekKey} | <ConnectionStatus /></p>
+            <p className="text-xs text-gray-500">{weekKey}</p>
           </div>
         </div>
 

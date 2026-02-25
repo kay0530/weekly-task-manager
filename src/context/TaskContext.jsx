@@ -23,7 +23,6 @@ export function TaskProvider({ children }) {
   const [allTasks, setAllTasks] = useState([]);
   const [weekSnapshots, setWeekSnapshots] = useState({});
   const [isLoading, setIsLoading] = useState(true);
-  const [connectionStatus, setConnectionStatus] = useState('connecting'); // 'online'|'offline'|'connecting'
 
   // Derived state
   const tasks = useMemo(() => allTasks.filter(t => t.status === 'active'), [allTasks]);
@@ -38,10 +37,9 @@ export function TaskProvider({ children }) {
       await initAuth();
       await migrateFromLocalStorage();
 
-      unsubTasks = subscribeToTasks((tasksFromFirestore, metadata) => {
+      unsubTasks = subscribeToTasks((tasksFromFirestore) => {
         setAllTasks(tasksFromFirestore);
         setIsLoading(false);
-        setConnectionStatus(metadata.fromCache ? 'offline' : 'online');
       });
 
       unsubSnapshots = subscribeToSnapshots((snapshotsFromFirestore) => {
@@ -223,7 +221,6 @@ export function TaskProvider({ children }) {
       importData,
       exportData,
       isLoading,
-      connectionStatus,
     }}>
       {children}
     </TaskContext.Provider>

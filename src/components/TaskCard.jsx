@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CATEGORIES, TASK_TYPES } from '../data/members';
+import { formatWeekKey } from '../data/initialData';
 import { useTaskContext } from '../context/TaskContext';
 import ProgressBar from './ProgressBar';
 
@@ -251,7 +252,7 @@ export default function TaskCard({ task, onEdit }) {
                 <div className="flex gap-1 mt-1 flex-wrap">
                   {Object.entries(task.weeklyHistory).sort().slice(-6).map(([week, data]) => (
                     <span key={week} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
-                      {week}: {data.progress}%
+                      {formatWeekKey(week)}: {data.progress}%
                     </span>
                   ))}
                 </div>

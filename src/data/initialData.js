@@ -22,6 +22,23 @@ export function getWeekDisplayLabel(date = new Date()) {
   return `${yy}年${m}月${dd}日週`;
 }
 
+// Convert ISO week key (e.g. "2026-W09") to display label (e.g. "26年2月23日週")
+export function formatWeekKey(weekKey) {
+  const match = weekKey.match(/^(\d{4})-W(\d{2})$/);
+  if (!match) return weekKey;
+  const year = parseInt(match[1], 10);
+  const week = parseInt(match[2], 10);
+  // ISO 8601: Week 1 contains Jan 4th. Find Monday of the given week.
+  const jan4 = new Date(year, 0, 4);
+  const jan4Day = jan4.getDay() || 7; // Mon=1..Sun=7
+  const monday = new Date(jan4);
+  monday.setDate(jan4.getDate() - (jan4Day - 1) + (week - 1) * 7);
+  const yy = monday.getFullYear() % 100;
+  const m = monday.getMonth() + 1;
+  const dd = monday.getDate();
+  return `${yy}年${m}月${dd}日週`;
+}
+
 export function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }

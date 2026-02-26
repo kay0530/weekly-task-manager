@@ -46,10 +46,12 @@ function DueDateBadge({ dueDate }) {
 }
 
 export default function TaskCard({ task, onEdit }) {
-  const { deleteTask, archiveTask, getProgressDelta } = useTaskContext();
+  const { deleteTask, archiveTask, updateTask, getProgressDelta } = useTaskContext();
   const [expanded, setExpanded] = useState(false);
   const category = CATEGORIES.find(c => c.id === task.category);
   const taskType = TASK_TYPES.find(t => t.id === task.taskType);
+  const isRoutine = task.taskType === 'routine';
+  const isDone = task.progress >= 100;
   const delta = getProgressDelta(task);
 
   const formatSize = (bytes) => {
@@ -124,9 +126,32 @@ export default function TaskCard({ task, onEdit }) {
           <DueDateBadge dueDate={task.dueDate} />
         </div>
 
-        {/* Progress bar */}
+        {/* Progress bar or Routine toggle */}
         <div className="mb-3">
-          <ProgressBar progress={task.progress} delta={delta} />
+          {isRoutine ? (
+            <button
+              type="button"
+              onClick={() => updateTask(task.id, { progress: isDone ? 0 : 100 })}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition cursor-pointer ${
+                isDone
+                  ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+            >
+              {isDone ? (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+              {isDone ? '実施済み' : '未実施'}
+            </button>
+          ) : (
+            <ProgressBar progress={task.progress} delta={delta} />
+          )}
         </div>
 
         {/* Done summary (always visible if present) */}
@@ -252,7 +277,7 @@ export default function TaskCard({ task, onEdit }) {
                 <div className="flex gap-1 mt-1 flex-wrap">
                   {Object.entries(task.weeklyHistory).sort().slice(-6).map(([week, data]) => (
                     <span key={week} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
-                      {formatWeekKey(week)}: {data.progress}%
+                      {formatWeekKey(week)}: {isRoutine ? (data.progress >= 100 ? '実施済み' : '未実施') : `${data.progress}%`}
                     </span>
                   ))}
                 </div>

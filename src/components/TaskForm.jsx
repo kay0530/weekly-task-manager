@@ -239,7 +239,13 @@ export default function TaskForm({ task, defaultMemberId, onClose }) {
                       <button
                         key={type.id}
                         type="button"
-                        onClick={() => set('taskType', type.id)}
+                        onClick={() => {
+                          set('taskType', type.id);
+                          // Snap progress to 0 or 100 when switching to routine
+                          if (type.id === 'routine') {
+                            setForm(prev => ({ ...prev, taskType: type.id, progress: prev.progress >= 50 ? 100 : 0 }));
+                          }
+                        }}
                         className={`flex-1 px-3 py-2 text-sm rounded-lg border transition cursor-pointer ${
                           form.taskType === type.id
                             ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
@@ -285,23 +291,59 @@ export default function TaskForm({ task, defaultMemberId, onClose }) {
             </div>
 
             {/* === Section 2: Progress === */}
-            <div className="bg-blue-50 rounded-xl p-4">
-              <label className="block text-sm font-medium text-blue-800 mb-2">
-                進捗: <span className="text-blue-600 font-bold text-lg">{form.progress}%</span>
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="5"
-                value={form.progress}
-                onChange={(e) => set('progress', Number(e.target.value))}
-                className="w-full accent-blue-600"
-              />
-              <div className="flex justify-between text-xs text-blue-400 mt-1">
-                <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+            {form.taskType === 'routine' ? (
+              <div className="bg-emerald-50 rounded-xl p-4">
+                <label className="block text-sm font-medium text-emerald-800 mb-2">実施状況</label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => set('progress', 100)}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
+                      form.progress >= 100
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    実施済み
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => set('progress', 0)}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
+                      form.progress < 100
+                        ? 'bg-gray-600 text-white shadow-sm'
+                        : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    未実施
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-blue-50 rounded-xl p-4">
+                <label className="block text-sm font-medium text-blue-800 mb-2">
+                  進捗: <span className="text-blue-600 font-bold text-lg">{form.progress}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={form.progress}
+                  onChange={(e) => set('progress', Number(e.target.value))}
+                  className="w-full accent-blue-600"
+                />
+                <div className="flex justify-between text-xs text-blue-400 mt-1">
+                  <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+                </div>
+              </div>
+            )}
 
             {/* === Section 3: Weekly Report === */}
             <div className="bg-gray-50 rounded-xl p-4 space-y-4">

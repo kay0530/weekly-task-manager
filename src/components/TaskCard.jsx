@@ -108,8 +108,8 @@ export default function TaskCard({ task, onEdit }) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition animate-fade-in">
-      <div className="p-4">
+    <div className={`bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition animate-fade-in ${!expanded ? 'h-52' : ''}`}>
+      <div className="p-4 h-full flex flex-col">
         {/* Top row: badges + actions */}
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
@@ -200,41 +200,44 @@ export default function TaskCard({ task, onEdit }) {
           )}
         </div>
 
-        {/* Done summary (always visible if present) */}
-        {task.done && (
-          <div className="mb-2">
-            <span className="text-xs text-green-700 font-medium">実施したこと:</span>
-            <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{task.done}</p>
-          </div>
-        )}
+        {/* Variable content section - constrained height when collapsed */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {/* Done summary (always visible if present) */}
+          {task.done && (
+            <div className="mb-2">
+              <span className="text-xs text-green-700 font-medium">実施したこと:</span>
+              <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{task.done}</p>
+            </div>
+          )}
 
-        {/* Completion notes (visible when 100%) */}
-        {task.progress >= 100 && task.completionNotes && (
-          <div className="mb-2 bg-emerald-50 rounded-lg px-2 py-1.5">
-            <span className="text-xs text-emerald-700 font-medium">✓ 完了内容:</span>
-            <p className="text-xs text-emerald-600 mt-0.5">{task.completionNotes}</p>
-          </div>
-        )}
+          {/* Completion notes (visible when 100%) */}
+          {task.progress >= 100 && task.completionNotes && (
+            <div className="mb-2 bg-emerald-50 rounded-lg px-2 py-1.5">
+              <span className="text-xs text-emerald-700 font-medium">✓ 完了内容:</span>
+              <p className="text-xs text-emerald-600 mt-0.5">{task.completionNotes}</p>
+            </div>
+          )}
 
-        {/* Quick indicators row */}
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
-          {task.issues && (
-            <span className="text-xs text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">⚠ 課題あり</span>
-          )}
-          {task.consultation && (
-            <span className="text-xs text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">💬 相談あり</span>
-          )}
-          {task.relatedUrls?.length > 0 && (
-            <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">🔗 {task.relatedUrls.length}件</span>
-          )}
-          {task.attachments?.length > 0 && (
-            <span className="text-xs text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">📎 {task.attachments.length}件</span>
-          )}
+          {/* Quick indicators row */}
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            {task.issues && (
+              <span className="text-xs text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">⚠ 課題あり</span>
+            )}
+            {task.consultation && (
+              <span className="text-xs text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">💬 相談あり</span>
+            )}
+            {task.relatedUrls?.length > 0 && (
+              <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">🔗 {task.relatedUrls.length}件</span>
+            )}
+            {task.attachments?.length > 0 && (
+              <span className="text-xs text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">📎 {task.attachments.length}件</span>
+            )}
+          </div>
         </div>
 
         <button
           onClick={() => setExpanded(!expanded)}
-          className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer"
+          className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer mt-auto flex-shrink-0 pt-1"
         >
           {expanded ? '▲ 閉じる' : '▼ 詳細を表示'}
         </button>

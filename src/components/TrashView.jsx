@@ -3,9 +3,11 @@ import { MEMBERS, CATEGORIES, TASK_TYPES } from '../data/members';
 import { useTaskContext } from '../context/TaskContext';
 import ProgressBar from './ProgressBar';
 
-export default function TrashView() {
+export default function TrashView({ selectedMember }) {
   const { deletedTasks, restoreFromTrash, permanentlyDelete, emptyTrash } = useTaskContext();
   const [filterMember, setFilterMember] = useState('all');
+  const currentMember = MEMBERS.find(m => m.id === selectedMember);
+  const isManager = currentMember?.role === 'manager';
 
   const filteredTasks = filterMember === 'all'
     ? deletedTasks
@@ -41,9 +43,12 @@ export default function TrashView() {
           <div>
             <h2 className="text-xl font-bold text-gray-900">ゴミ箱</h2>
             <p className="text-sm text-gray-500">{deletedTasks.length}件の削除済みタスク</p>
+            {!isManager && deletedTasks.length > 0 && (
+              <p className="text-xs text-gray-400 mt-0.5">※ 完全削除はマネージャーのみ実行できます</p>
+            )}
           </div>
         </div>
-        {deletedTasks.length > 0 && (
+        {deletedTasks.length > 0 && isManager && (
           <button
             onClick={() => { if (confirm(`ゴミ箱を空にしますか？\n${deletedTasks.length}件のタスクが完全に削除されます。この操作は取り消せません。`)) emptyTrash(); }}
             className="px-3 py-1.5 text-xs text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition cursor-pointer"
@@ -143,12 +148,14 @@ export default function TrashView() {
                       </svg>
                       復元
                     </button>
-                    <button
-                      onClick={() => { if (confirm('このタスクを完全に削除しますか？この操作は取り消せません。')) permanentlyDelete(task.id); }}
-                      className="px-3 py-1.5 text-xs text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition cursor-pointer"
-                    >
-                      完全削除
-                    </button>
+                    {isManager && (
+                      <button
+                        onClick={() => { if (confirm('このタスクを完全に削除しますか？この操作は取り消せません。')) permanentlyDelete(task.id); }}
+                        className="px-3 py-1.5 text-xs text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition cursor-pointer"
+                      >
+                        完全削除
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

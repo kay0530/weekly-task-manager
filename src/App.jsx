@@ -75,7 +75,7 @@ export default function App() {
       case 'member':
         return <MemberView memberId={selectedMember} />;
       case 'trash':
-        return <TrashView />;
+        return <TrashView selectedMember={selectedMember} />;
       case 'archive':
         return <ArchiveView />;
       default:

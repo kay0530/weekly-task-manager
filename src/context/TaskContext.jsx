@@ -56,10 +56,14 @@ export function TaskProvider({ children }) {
 
   const addTask = useCallback(async (task) => {
     const now = new Date().toISOString();
+    // Calculate displayOrder: max order in same member + 1
+    const memberTasks = tasks.filter(t => t.memberId === task.memberId);
+    const maxOrder = memberTasks.reduce((max, t) => Math.max(max, t.displayOrder || 0), 0);
     const newTask = {
       id: generateId(),
       ...task,
       progress: task.progress || 0,
+      displayOrder: maxOrder + 1,
       weeklyHistory: {},
       status: 'active',
       createdAt: now,
@@ -67,7 +71,7 @@ export function TaskProvider({ children }) {
     };
     await addTaskToFirestore(newTask);
     return newTask;
-  }, []);
+  }, [tasks]);
 
   const updateTask = useCallback(async (id, updates) => {
     await updateTaskInFirestore(id, updates);
@@ -137,8 +141,21 @@ export function TaskProvider({ children }) {
     return task.progress - (history[prevWeek]?.progress || 0);
   }, []);
 
+  const reorderTasks = useCallback(async (orderedTaskIds) => {
+    const updates = orderedTaskIds.map((id, index) => ({
+      id,
+      data: { displayOrder: index + 1 },
+    }));
+    await batchUpdateTasks(updates);
+  }, []);
+
   const getTasksByMember = useCallback((memberId) => {
-    return tasks.filter(t => t.memberId === memberId);
+    const memberTasks = tasks.filter(t => t.memberId === memberId);
+    return memberTasks.sort((a, b) => {
+      const orderA = a.displayOrder ?? new Date(a.createdAt).getTime();
+      const orderB = b.displayOrder ?? new Date(b.createdAt).getTime();
+      return orderA - orderB;
+    });
   }, [tasks]);
 
   const getTasksByCategory = useCallback((categoryId) => {
@@ -216,6 +233,7 @@ export function TaskProvider({ children }) {
       emptyTrash,
       saveWeeklySnapshot,
       getProgressDelta,
+      reorderTasks,
       getTasksByMember,
       getTasksByCategory,
       importData,

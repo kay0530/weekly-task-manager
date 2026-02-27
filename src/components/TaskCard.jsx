@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { CATEGORIES, TASK_TYPES } from '../data/members';
 import { formatWeekKey } from '../data/initialData';
 import { useTaskContext } from '../context/TaskContext';
@@ -42,6 +44,50 @@ function DueDateBadge({ dueDate }) {
       </svg>
       {label}
     </span>
+  );
+}
+
+export function SortableTaskCard({ task, onEdit, isDragEnabled }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`relative ${isDragging ? 'opacity-40 z-10' : ''}`}
+    >
+      {/* Drag handle */}
+      {isDragEnabled && (
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute top-2 left-2 z-10 p-1 rounded hover:bg-gray-100 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 transition"
+          title="ドラッグして並べ替え"
+        >
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <circle cx="9" cy="5" r="1.5" />
+            <circle cx="15" cy="5" r="1.5" />
+            <circle cx="9" cy="12" r="1.5" />
+            <circle cx="15" cy="12" r="1.5" />
+            <circle cx="9" cy="19" r="1.5" />
+            <circle cx="15" cy="19" r="1.5" />
+          </svg>
+        </div>
+      )}
+      <TaskCard task={task} onEdit={onEdit} />
+    </div>
   );
 }
 

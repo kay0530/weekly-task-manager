@@ -1,23 +1,31 @@
 import { useState } from 'react';
+import { DndContext, closestCenter, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, rectSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { MEMBERS, CATEGORIES, TASK_TYPES } from '../data/members';
 import { useTaskContext } from '../context/TaskContext';
 import { MemberAvatar } from './Sidebar';
-import TaskCard from './TaskCard';
+import TaskCard, { SortableTaskCard } from './TaskCard';
 import TaskForm from './TaskForm';
 
 export default function MemberView({ memberId }) {
-  const { getTasksByMember } = useTaskContext();
+  const { getTasksByMember, reorderTasks } = useTaskContext();
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('default');
+  const [activeId, setActiveId] = useState(null);
+
+  // Require 8px movement before starting drag to avoid accidental drags
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
 
   const member = MEMBERS.find(m => m.id === memberId);
   const memberTasks = getTasksByMember(memberId);
 
   // Apply filters
-  let filteredTasks = memberTasks;
+  let filteredTasks = [...memberTasks];
   if (filterCategory !== 'all') {
     filteredTasks = filteredTasks.filter(t => t.category === filterCategory);
   }
@@ -25,18 +33,23 @@ export default function MemberView({ memberId }) {
     filteredTasks = filteredTasks.filter(t => t.taskType === filterType);
   }
 
-  // Apply sorting
+  // Apply sorting (only when not custom/default order)
   if (sortBy === 'priority') {
-    filteredTasks = [...filteredTasks].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+    filteredTasks.sort((a, b) => (b.priority || 0) - (a.priority || 0));
   } else if (sortBy === 'dueDate') {
-    filteredTasks = [...filteredTasks].sort((a, b) => {
+    filteredTasks.sort((a, b) => {
       if (!a.dueDate) return 1;
       if (!b.dueDate) return -1;
       return new Date(a.dueDate) - new Date(b.dueDate);
     });
   } else if (sortBy === 'progress') {
-    filteredTasks = [...filteredTasks].sort((a, b) => b.progress - a.progress);
+    filteredTasks.sort((a, b) => b.progress - a.progress);
   }
+  // When sortBy === 'default', tasks are already sorted by displayOrder from getTasksByMember
+
+  const isDragEnabled = sortBy === 'default';
+  const taskIds = filteredTasks.map(t => t.id);
+  const activeTask = activeId ? filteredTasks.find(t => t.id === activeId) : null;
 
   const avgProgress = memberTasks.length > 0
     ? Math.round(memberTasks.reduce((s, t) => s + t.progress, 0) / memberTasks.length)
@@ -55,7 +68,82 @@ export default function MemberView({ memberId }) {
     setEditingTask(null);
   };
 
+  const handleDragStart = (event) => {
+    setActiveId(event.active.id);
+  };
+
+  const handleDragEnd = (event) => {
+    setActiveId(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = taskIds.indexOf(active.id);
+    const newIndex = taskIds.indexOf(over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newOrder = arrayMove(taskIds, oldIndex, newIndex);
+    reorderTasks(newOrder);
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+  };
+
   if (!member) return <div className="p-6 text-gray-500">メンバーを選択してください</div>;
+
+  const renderTaskGrid = () => {
+    if (filteredTasks.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          <p className="text-gray-500">タスクがありません</p>
+          <button
+            onClick={() => { setEditingTask(null); setShowForm(true); }}
+            className="mt-3 text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+          >
+            + 最初のタスクを作成
+          </button>
+        </div>
+      );
+    }
+
+    if (isDragEnabled) {
+      return (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <SortableContext items={taskIds} strategy={rectSortingStrategy}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {filteredTasks.map(task => (
+                <SortableTaskCard key={task.id} task={task} onEdit={handleEdit} isDragEnabled />
+              ))}
+            </div>
+          </SortableContext>
+          <DragOverlay>
+            {activeTask ? (
+              <div className="opacity-90 rotate-2 shadow-2xl">
+                <TaskCard task={activeTask} onEdit={() => {}} />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {filteredTasks.map(task => (
+          <TaskCard key={task.id} task={task} onEdit={handleEdit} />
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="p-6 animate-fade-in">
@@ -131,7 +219,7 @@ export default function MemberView({ memberId }) {
             onChange={(e) => setSortBy(e.target.value)}
             className="px-2 py-1 text-xs border border-gray-300 rounded-lg"
           >
-            <option value="default">並び替え</option>
+            <option value="default">カスタム順</option>
             <option value="priority">優先順位</option>
             <option value="dueDate">期日</option>
             <option value="progress">進捗</option>
@@ -139,27 +227,18 @@ export default function MemberView({ memberId }) {
         </div>
       </div>
 
-      {/* Tasks Grid */}
-      {filteredTasks.length > 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {filteredTasks.map(task => (
-            <TaskCard key={task.id} task={task} onEdit={handleEdit} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12">
-          <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      {/* Drag hint */}
+      {isDragEnabled && filteredTasks.length > 1 && (
+        <p className="text-xs text-gray-400 mb-3 flex items-center gap-1">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
           </svg>
-          <p className="text-gray-500">タスクがありません</p>
-          <button
-            onClick={() => { setEditingTask(null); setShowForm(true); }}
-            className="mt-3 text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
-          >
-            + 最初のタスクを作成
-          </button>
-        </div>
+          ドラッグでタスクの順序を変更できます
+        </p>
       )}
+
+      {/* Tasks Grid */}
+      {renderTaskGrid()}
 
       {/* Task Form Modal */}
       {showForm && (

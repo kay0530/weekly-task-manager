@@ -108,7 +108,7 @@ export default function TaskCard({ task, onEdit }) {
   };
 
   return (
-    <div className={`bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition animate-fade-in ${!expanded ? 'h-52' : ''}`}>
+    <div className={`bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition animate-fade-in ${!expanded ? 'h-60' : ''}`}>
       <div className="p-4 h-full flex flex-col">
         {/* Top row: badges + actions */}
         <div className="flex items-start justify-between mb-2">
@@ -129,8 +129,6 @@ export default function TaskCard({ task, onEdit }) {
                 {taskType.icon} {taskType.label}
               </span>
             )}
-            {/* Priority stars */}
-            {task.priority && <PriorityStars value={task.priority} />}
           </div>
           <div className="flex items-center gap-1 ml-2 flex-shrink-0">
             {/* Archive button (visible when progress >= 100%) */}
@@ -166,8 +164,9 @@ export default function TaskCard({ task, onEdit }) {
           </div>
         </div>
 
-        {/* Title + Due date row */}
+        {/* Priority + Title + Due date row */}
         <div className="flex items-center gap-2 mb-2">
+          {task.priority && <PriorityStars value={task.priority} />}
           <h3 className="text-sm font-semibold text-gray-900 truncate flex-1">{task.title || '(無題)'}</h3>
           <DueDateBadge dueDate={task.dueDate} />
         </div>

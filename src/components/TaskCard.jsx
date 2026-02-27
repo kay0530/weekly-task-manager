@@ -58,7 +58,7 @@ export function SortableTaskCard({ task, onEdit, isDragEnabled }) {
   } = useSortable({ id: task.id });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
   };
 

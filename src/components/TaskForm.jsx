@@ -187,7 +187,7 @@ export default function TaskForm({ task, defaultMemberId, onClose }) {
 
   return (
     <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto animate-fade-in">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-fade-in">
         <div className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
@@ -273,20 +273,22 @@ export default function TaskForm({ task, defaultMemberId, onClose }) {
               </div>
 
               {/* Row: Priority, Due Date */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className={`grid ${form.taskType === 'routine' ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">優先順位</label>
                   <StarRating value={form.priority} onChange={(v) => set('priority', v)} />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">期日</label>
-                  <input
-                    type="date"
-                    value={form.dueDate}
-                    onChange={(e) => set('dueDate', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+                {form.taskType !== 'routine' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">期日</label>
+                    <input
+                      type="date"
+                      value={form.dueDate}
+                      onChange={(e) => set('dueDate', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -366,72 +368,72 @@ export default function TaskForm({ task, defaultMemberId, onClose }) {
                 />
               </div>
 
-              {/* Not Done + Reason */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-red-600 mb-1">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                      出来なかったこと
-                    </span>
-                  </label>
-                  <textarea
-                    value={form.notDone}
-                    onChange={(e) => set('notDone', e.target.value)}
-                    rows={2}
-                    placeholder="出来なかった内容..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-red-400 mb-1">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-red-300"></span>
-                      理由
-                    </span>
-                  </label>
-                  <textarea
-                    value={form.notDoneReason}
-                    onChange={(e) => set('notDoneReason', e.target.value)}
-                    rows={2}
-                    placeholder="出来なかった理由..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400"
-                  />
-                </div>
+              {/* Not Done */}
+              <div>
+                <label className="block text-sm font-medium text-red-600 mb-1">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                    出来なかったこと
+                  </span>
+                </label>
+                <textarea
+                  value={form.notDone}
+                  onChange={(e) => set('notDone', e.target.value)}
+                  rows={2}
+                  placeholder="出来なかった内容..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                />
               </div>
 
-              {/* Issues + Consultation */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-orange-600 mb-1">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                      課題
-                    </span>
-                  </label>
-                  <textarea
-                    value={form.issues}
-                    onChange={(e) => set('issues', e.target.value)}
-                    rows={2}
-                    placeholder="現在の課題..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-purple-600 mb-1">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                      相談事項
-                    </span>
-                  </label>
-                  <textarea
-                    value={form.consultation}
-                    onChange={(e) => set('consultation', e.target.value)}
-                    rows={2}
-                    placeholder="相談したいこと..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  />
-                </div>
+              {/* Reason */}
+              <div>
+                <label className="block text-sm font-medium text-red-400 mb-1">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-red-300"></span>
+                    理由
+                  </span>
+                </label>
+                <textarea
+                  value={form.notDoneReason}
+                  onChange={(e) => set('notDoneReason', e.target.value)}
+                  rows={2}
+                  placeholder="出来なかった理由..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400"
+                />
+              </div>
+
+              {/* Issues */}
+              <div>
+                <label className="block text-sm font-medium text-orange-600 mb-1">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                    課題
+                  </span>
+                </label>
+                <textarea
+                  value={form.issues}
+                  onChange={(e) => set('issues', e.target.value)}
+                  rows={2}
+                  placeholder="現在の課題..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+
+              {/* Consultation */}
+              <div>
+                <label className="block text-sm font-medium text-purple-600 mb-1">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                    相談事項
+                  </span>
+                </label>
+                <textarea
+                  value={form.consultation}
+                  onChange={(e) => set('consultation', e.target.value)}
+                  rows={2}
+                  placeholder="相談したいこと..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
               </div>
             </div>
 

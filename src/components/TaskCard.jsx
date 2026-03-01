@@ -3,6 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { CATEGORIES, TASK_TYPES } from '../data/members';
 import { formatWeekKey } from '../data/initialData';
+import RichTextDisplay from './RichTextDisplay';
 import { useTaskContext } from '../context/TaskContext';
 import ProgressBar from './ProgressBar';
 
@@ -205,7 +206,7 @@ export default function TaskCard({ task, onEdit }) {
           {task.done && (
             <div className="mb-2">
               <span className="text-xs text-green-700 font-medium">実施したこと:</span>
-              <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{task.done}</p>
+              <p className="text-xs text-gray-600 mt-0.5 line-clamp-2"><RichTextDisplay content={task.done} /></p>
             </div>
           )}
 
@@ -213,7 +214,7 @@ export default function TaskCard({ task, onEdit }) {
           {task.progress >= 100 && task.completionNotes && (
             <div className="mb-2 bg-emerald-50 rounded-lg px-2 py-1.5">
               <span className="text-xs text-emerald-700 font-medium">✓ 完了内容:</span>
-              <p className="text-xs text-emerald-600 mt-0.5">{task.completionNotes}</p>
+              <p className="text-xs text-emerald-600 mt-0.5"><RichTextDisplay content={task.completionNotes} /></p>
             </div>
           )}
 
@@ -247,28 +248,28 @@ export default function TaskCard({ task, onEdit }) {
             {task.notDone && (
               <div>
                 <span className="text-xs text-red-600 font-medium">出来なかったこと:</span>
-                <p className="text-xs text-gray-600 mt-0.5">{task.notDone}</p>
+                <p className="text-xs text-gray-600 mt-0.5"><RichTextDisplay content={task.notDone} /></p>
                 {task.notDoneReason && (
-                  <p className="text-xs text-gray-500 mt-0.5 italic">理由: {task.notDoneReason}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 italic">理由: <RichTextDisplay content={task.notDoneReason} /></p>
                 )}
               </div>
             )}
             {task.issues && (
               <div>
                 <span className="text-xs text-orange-600 font-medium">課題:</span>
-                <p className="text-xs text-gray-600 mt-0.5">{task.issues}</p>
+                <p className="text-xs text-gray-600 mt-0.5"><RichTextDisplay content={task.issues} /></p>
               </div>
             )}
             {task.consultation && (
               <div>
                 <span className="text-xs text-purple-600 font-medium">相談事項:</span>
-                <p className="text-xs text-gray-600 mt-0.5">{task.consultation}</p>
+                <p className="text-xs text-gray-600 mt-0.5"><RichTextDisplay content={task.consultation} /></p>
               </div>
             )}
             {task.remarks && (
               <div>
                 <span className="text-xs text-gray-500 font-medium">備考:</span>
-                <p className="text-xs text-gray-600 mt-0.5">{task.remarks}</p>
+                <p className="text-xs text-gray-600 mt-0.5"><RichTextDisplay content={task.remarks} /></p>
               </div>
             )}
 

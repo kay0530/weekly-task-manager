@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MEMBERS, CATEGORIES, TASK_TYPES, PRIORITY_LEVELS } from '../data/members';
 import { useTaskContext } from '../context/TaskContext';
+import RichTextEditor from './RichTextEditor';
 
 function StarRating({ value, onChange }) {
   const [hover, setHover] = useState(0);
@@ -359,9 +360,9 @@ export default function TaskForm({ task, defaultMemberId, onClose }) {
                     実施したこと
                   </span>
                 </label>
-                <textarea
+                <RichTextEditor
                   value={form.done}
-                  onChange={(e) => set('done', e.target.value)}
+                  onChange={(val) => set('done', val)}
                   rows={2}
                   placeholder="今週実施した内容..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -376,9 +377,9 @@ export default function TaskForm({ task, defaultMemberId, onClose }) {
                     出来なかったこと
                   </span>
                 </label>
-                <textarea
+                <RichTextEditor
                   value={form.notDone}
-                  onChange={(e) => set('notDone', e.target.value)}
+                  onChange={(val) => set('notDone', val)}
                   rows={2}
                   placeholder="出来なかった内容..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
@@ -393,9 +394,9 @@ export default function TaskForm({ task, defaultMemberId, onClose }) {
                     理由
                   </span>
                 </label>
-                <textarea
+                <RichTextEditor
                   value={form.notDoneReason}
-                  onChange={(e) => set('notDoneReason', e.target.value)}
+                  onChange={(val) => set('notDoneReason', val)}
                   rows={2}
                   placeholder="出来なかった理由..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400"
@@ -410,9 +411,9 @@ export default function TaskForm({ task, defaultMemberId, onClose }) {
                     課題
                   </span>
                 </label>
-                <textarea
+                <RichTextEditor
                   value={form.issues}
-                  onChange={(e) => set('issues', e.target.value)}
+                  onChange={(val) => set('issues', val)}
                   rows={2}
                   placeholder="現在の課題..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
@@ -427,9 +428,9 @@ export default function TaskForm({ task, defaultMemberId, onClose }) {
                     相談事項
                   </span>
                 </label>
-                <textarea
+                <RichTextEditor
                   value={form.consultation}
-                  onChange={(e) => set('consultation', e.target.value)}
+                  onChange={(val) => set('consultation', val)}
                   rows={2}
                   placeholder="相談したいこと..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"

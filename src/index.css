@@ -34,6 +34,16 @@ input[type="date"] {
   color: #d1d5db !important;
 }
 
+/* Rich Text Editor */
+.rich-text-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+}
+.rich-text-editor:focus {
+  outline: none;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;

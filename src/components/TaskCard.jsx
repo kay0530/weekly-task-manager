@@ -250,7 +250,7 @@ export default function TaskCard({ task, onEdit }) {
                 <span className="text-xs text-red-600 font-medium">出来なかったこと:</span>
                 <p className="text-xs text-gray-600 mt-0.5"><RichTextDisplay content={task.notDone} /></p>
                 {task.notDoneReason && (
-                  <p className="text-xs text-gray-500 mt-0.5 italic">理由: <RichTextDisplay content={task.notDoneReason} /></p>
+                  <p className="text-xs text-gray-500 mt-0.5">理由: <RichTextDisplay content={task.notDoneReason} /></p>
                 )}
               </div>
             )}

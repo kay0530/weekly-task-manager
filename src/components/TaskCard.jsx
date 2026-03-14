@@ -201,12 +201,12 @@ export default function TaskCard({ task, onEdit }) {
         </div>
 
         {/* Variable content section - constrained height when collapsed */}
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className={`flex-1 min-h-0${expanded ? '' : ' overflow-hidden'}`}>
           {/* Done summary (always visible if present) */}
           {task.done && (
             <div className="mb-2">
               <span className="text-xs text-green-700 font-medium">実施したこと:</span>
-              <p className="text-xs text-gray-600 mt-0.5 line-clamp-2"><RichTextDisplay content={task.done} /></p>
+              <p className={`text-xs text-gray-600 mt-0.5${expanded ? '' : ' line-clamp-2'}`}><RichTextDisplay content={task.done} /></p>
             </div>
           )}
 
